@@ -425,7 +425,7 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
 #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-        struct dentry *dentry = file->f_path.dentry;
+		{ /* scope for C90 */ struct dentry *dentry = file->f_path.dentry;
         if (dentry) {
         	const char *path = (const char *)dentry->d_name.name; 
             	if (strstr(path, "lineage")) { 
@@ -435,7 +435,7 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
             	name = "/system/framework/framework-res.apk";
 		goto done;
             	 	}
-            	}
+            	} }
 	}
 
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
