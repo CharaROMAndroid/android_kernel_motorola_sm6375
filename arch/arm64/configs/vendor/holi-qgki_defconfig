@@ -1053,3 +1053,6 @@ CONFIG_KSU_MANUAL_HOOK_AUTO_INPUT_HOOK=y
 # end of KernelSU - Manual Hook Auto hook
 # end of KernelSU
 # end of Device Drivers
+
+# UFW/Fail2ban and ipset support
+
