@@ -21,6 +21,9 @@
 #include <linux/unistd.h>
 #include <linux/compat.h>
 #include <linux/uaccess.h>
+#ifdef CONFIG_ZEROMOUNT
+#include <linux/zeromount.h>
+#endif
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 #include <linux/susfs_def.h>
 extern int susfs_get_data_path(struct path *path);
@@ -338,6 +341,10 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 		.current_dir = dirent
 	};
 	int error;
+#ifdef CONFIG_ZEROMOUNT
+	int remaining = count;
+	void __user *zm_dirent = dirent;
+#endif
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	int path_err = -EINVAL;
 	struct path path;
@@ -362,6 +369,12 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 
 orig_flow:
 #endif
+#ifdef CONFIG_ZEROMOUNT
+	if (f.file->f_pos >= ZEROMOUNT_MAGIC_POS) {
+		error = 0;
+		goto zm_inject;
+	}
+#endif
 	error = iterate_dir(f.file, &buf.ctx);
 	if (error >= 0)
 		error = buf.error;
@@ -374,6 +387,14 @@ orig_flow:
 		else
 			error = count - buf.count;
 	}
+#ifdef CONFIG_ZEROMOUNT
+	if (error == 0 && !signal_pending(current)) {
+zm_inject:
+		zeromount_inject_dents(f.file, &zm_dirent, &remaining, &f.file->f_pos);
+		if (remaining != count)
+			error = count - remaining;
+	}
+#endif
 	fdput_pos(f);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	if (!path_err)
@@ -463,6 +484,10 @@ int ksys_getdents64(unsigned int fd, struct linux_dirent64 __user *dirent,
 		.current_dir = dirent
 	};
 	int error;
+#ifdef CONFIG_ZEROMOUNT
+	int remaining = count;
+	void __user *zm_dirent = dirent;
+#endif
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	int path_err = -EINVAL;
 	struct path path;
@@ -487,6 +512,12 @@ int ksys_getdents64(unsigned int fd, struct linux_dirent64 __user *dirent,
 
 orig_flow:
 #endif
+#ifdef CONFIG_ZEROMOUNT
+	if (f.file->f_pos >= ZEROMOUNT_MAGIC_POS) {
+		error = 0;
+		goto zm_inject;
+	}
+#endif
 	error = iterate_dir(f.file, &buf.ctx);
 	if (error >= 0)
 		error = buf.error;
@@ -500,6 +531,14 @@ orig_flow:
 		else
 			error = count - buf.count;
 	}
+#ifdef CONFIG_ZEROMOUNT
+	if (error == 0 && !signal_pending(current)) {
+zm_inject:
+		zeromount_inject_dents64(f.file, &zm_dirent, &remaining, &f.file->f_pos);
+		if (remaining != count)
+			error = count - remaining;
+	}
+#endif
 	fdput_pos(f);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	if (!path_err)
@@ -715,6 +754,10 @@ COMPAT_SYSCALL_DEFINE3(getdents, unsigned int, fd,
 		.count = count
 	};
 	int error;
+#ifdef CONFIG_ZEROMOUNT
+	int remaining = count;
+	void __user *zm_dirent = dirent;
+#endif
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	int path_err = -EINVAL;
 	struct path path;
@@ -739,6 +782,12 @@ COMPAT_SYSCALL_DEFINE3(getdents, unsigned int, fd,
 
 orig_flow:
 #endif
+#ifdef CONFIG_ZEROMOUNT
+	if (f.file->f_pos >= ZEROMOUNT_MAGIC_POS) {
+		error = 0;
+		goto zm_inject;
+	}
+#endif
 	error = iterate_dir(f.file, &buf.ctx);
 	if (error >= 0)
 		error = buf.error;
@@ -749,6 +798,14 @@ orig_flow:
 		else
 			error = count - buf.count;
 	}
+#ifdef CONFIG_ZEROMOUNT
+	if (error == 0 && !signal_pending(current)) {
+zm_inject:
+		zeromount_inject_dents(f.file, &zm_dirent, &remaining, &f.file->f_pos);
+		if (remaining != count)
+			error = count - remaining;
+	}
+#endif
 	fdput_pos(f);
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	if (!path_err)
